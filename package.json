@@ -1,0 +1,45 @@
+{
+  "name": "xrpl-cli",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "format": "prettier --write \"**/*.{js,ts,tsx,md}\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "private": true,
+  "bin": {
+    "xrpl": "src/xrpl-cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "chalk": "^5.2.0",
+    "cli-spinners": "^2.9.0",
+    "conf": "^11.0.1",
+    "dotenv": "^16.3.2",
+    "get-stdin": "^9.0.0",
+    "json-colorizer": "^2.2.2",
+    "meow": "^12.0.1",
+    "open": "^9.1.0",
+    "ora": "^6.3.0",
+    "path": "^0.12.7",
+    "prompts": "^2.4.2",
+    "toml": "^3.0.0",
+    "window-size": "^1.1.1"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.1.0",
+    "env-paths": "^3.0.0",
+    "eslint": "^8.40.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.8"
+  }
+}
