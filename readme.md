@@ -1,4 +1,4 @@
-## XRPL CLI
+## XRPLF CLI
 
 This CLI tool provides a common interface for interacting with XRPL-related repositories and tools.
 
@@ -11,7 +11,7 @@ pnpm link --global
 ## Usage
 
 ```bash
-xrpl help
+xrplf help
 ```
 
 ## Commands
@@ -61,17 +61,17 @@ xrpl
 You can set config options with:
 
 ```bash
-xrpl config set <key> <value>
+xrplf config set <key> <value>
 ```
 
 You can get config options with:
 
 ```bash
-xrpl config get <key>
+xrplf config get <key>
 ```
 
 You can list all config options with:
 
 ```bash
-xrpl config list
+xrplf config list
 ```
