@@ -1,7 +1,7 @@
-import { setContextFunctions, setFlagDefaults } from "./lib/env.js";
+import { setContextFunctions, setFlagDefaults } from './lib/env.js';
 
-import chalk from "chalk";
-import { loadActions } from "./actions/index.js"; // add new top level actions here
+import chalk from 'chalk';
+import { loadActions } from './actions/index.js'; // add new top level actions here
 
 const log = console.log;
 

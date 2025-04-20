@@ -1,10 +1,10 @@
-import Conf from "conf";
-import toml from "@iarna/toml";
+import Conf from 'conf';
+import toml from '@iarna/toml';
 
 // automatically create the config directory in the user's home directory
 const config = new Conf({
-  projectName: "xrpl-cli",
-  fileExtension: "toml",
+  projectName: 'xrpl-cli',
+  fileExtension: 'toml',
   serialize: (store) => {
     return toml.stringify(store);
   },

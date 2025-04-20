@@ -19,6 +19,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/secret-manager": "^6.0.1",
     "@iarna/toml": "^2.2.5",
     "chalk": "^5.2.0",
     "cli-spinners": "^2.9.0",
@@ -26,6 +27,7 @@
     "dotenv": "^16.3.2",
     "get-stdin": "^9.0.0",
     "json-colorizer": "^2.2.2",
+    "keytar": "^7.9.0",
     "meow": "^12.0.1",
     "open": "^9.1.0",
     "ora": "^6.3.0",

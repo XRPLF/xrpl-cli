@@ -1,11 +1,11 @@
-import ora from "ora";
-import spinners from "cli-spinners";
+import ora from 'ora';
+import spinners from 'cli-spinners';
 
 export const waitFor = (promise, options) => {
   // await waitFor(promise, { text: 'Loading unicorns', spinner: spinners.dots });
 
   const spinner = ora({
-    text: "Processing...",
+    text: 'Processing...',
     spinner: spinners.earth,
     ...options,
   });
