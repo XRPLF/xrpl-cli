@@ -7,6 +7,7 @@ class SecretProvider {
   async set(service, key, value) {}
   async delete(service, key) {}
   async list(service) {}
+  type() {}
 }
 
 class KeytarProvider extends SecretProvider {
@@ -26,6 +27,10 @@ class KeytarProvider extends SecretProvider {
     console.warn('Listing not supported for keytar');
     return [];
   }
+
+  type() {
+    return 'local';
+  }
 }
 
 class GCPSecretManagerProvider extends SecretProvider {
@@ -37,6 +42,10 @@ class GCPSecretManagerProvider extends SecretProvider {
 
   _secretPath(service, key) {
     return `projects/${this.projectId}/secrets/${service}_${key}`;
+  }
+
+  type() {
+    return 'gcp';
   }
 
   async get(service, key) {
@@ -75,7 +84,7 @@ class GCPSecretManagerProvider extends SecretProvider {
 }
 
 export function getSecretProvider() {
-  const backend = config.get('secret_backend') || process.env.XRPL_CLI_SECRET_BACKEND || 'keytar';
+  const backend = config.get('secret_backend') || process.env.XRPL_CLI_SECRET_BACKEND || 'local';
   if (backend === 'gcp') {
     return new GCPSecretManagerProvider();
   } else {
