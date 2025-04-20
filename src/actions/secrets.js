@@ -1,6 +1,8 @@
 import chalk from 'chalk';
 import config from '../lib/config.js';
 import { getSecretProvider } from '../lib/secrets.js';
+import getStdin from 'get-stdin';
+import prompts from 'prompts';
 
 export const description = 'Manage global secret config (set, get, list, delete)';
 
@@ -46,10 +48,32 @@ export const exec = async (context) => {
       break;
     }
     case 'set': {
-      if (!key || !value) {
-        console.error(`Usage: ${context.personality} secret set KEY VALUE`);
+      if (!key) {
+        console.error('❌ Missing key');
         process.exit(1);
       }
+      let value;
+
+      // see if stdin is available
+      const input = await getStdin();
+      if (input) {
+        value = input;
+        // trim off the trailing newline
+        value = value.trim();
+      } else {
+        const userInput = await prompts({
+          type: 'text',
+          name: 'value',
+          message: `Enter value for secret ${key}`,
+        });
+        value = userInput.value;
+      }
+
+      if (!value) {
+        console.error('❌ No value entered, aborting.');
+        process.exit(1);
+      }
+
       await provider.set(service, key, value);
       console.log(chalk.green(`✅ Secret ${key} set`));
       break;
