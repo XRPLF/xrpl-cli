@@ -13,7 +13,7 @@ import path from 'path';
 const __dirname = new URL('.', import.meta.url).pathname;
 
 const pkgJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json')));
-let personality = pkgJson.name || 'xrpl';
+let personality = pkgJson.name || 'xrplf';
 personality = personality.replace('-cli', '');
 
 // load environment variables

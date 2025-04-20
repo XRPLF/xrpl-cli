@@ -51,7 +51,7 @@ export const exec = async (context) => {
         process.exit(1);
       }
       await provider.set(service, key, value);
-      console.log(chalk.green(`✅ Secret ${key} set via ${backend}`));
+      console.log(chalk.green(`✅ Secret ${key} set`));
       break;
     }
 
@@ -60,7 +60,13 @@ export const exec = async (context) => {
         console.error(`Usage: ${context.personality} secret get KEY`);
         process.exit(1);
       }
-      const result = await provider.get(service, key);
+      let result;
+      try {
+        result = await provider.get(service, key);
+      } catch (err) {
+        console.error(chalk.red(`Error getting secret: ${err.message}`));
+        process.exit(1);
+      }
       if (result) {
         console.log(result);
       } else console.warn(chalk.yellow(`No secret set for ${key}`));

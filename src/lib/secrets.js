@@ -37,7 +37,7 @@ class GCPSecretManagerProvider extends SecretProvider {
   constructor() {
     super();
     this.client = new SecretManagerServiceClient();
-    this.projectId = process.env.GCP_PROJECT_ID;
+    this.projectId = config.get('gcp_project_id') || process.env.GCP_PROJECT_ID;
   }
 
   _secretPath(service, key) {
@@ -49,6 +49,12 @@ class GCPSecretManagerProvider extends SecretProvider {
   }
 
   async get(service, key) {
+    if (!this.projectId) {
+      throw new Error(
+        'GCP_PROJECT_ID is not set. Please set it in your config or environment variables.'
+      );
+    }
+
     const [version] = await this.client.accessSecretVersion({
       name: `${this._secretPath(service, key)}/versions/latest`,
     });
@@ -56,6 +62,12 @@ class GCPSecretManagerProvider extends SecretProvider {
   }
 
   async set(service, key, value) {
+    if (!this.projectId) {
+      throw new Error(
+        'GCP_PROJECT_ID is not set. Please set it in your config or environment variables.'
+      );
+    }
+
     const secretId = `${service}_${key}`;
     try {
       await this.client.createSecret({
@@ -64,7 +76,7 @@ class GCPSecretManagerProvider extends SecretProvider {
         secret: { replication: { automatic: {} } },
       });
     } catch (e) {
-      if (!e.message.includes('Already exists')) throw e;
+      if (!e.message.includes('ALREADY_EXISTS')) throw e;
     }
 
     await this.client.addSecretVersion({
@@ -74,6 +86,12 @@ class GCPSecretManagerProvider extends SecretProvider {
   }
 
   async delete(service, key) {
+    if (!this.projectId) {
+      throw new Error(
+        'GCP_PROJECT_ID is not set. Please set it in your config or environment variables.'
+      );
+    }
+
     await this.client.deleteSecret({ name: this._secretPath(service, key) });
   }
 

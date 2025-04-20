@@ -1,5 +1,5 @@
 {
-  "name": "xrpl-cli",
+  "name": "xrplf-cli",
   "version": "0.0.0",
   "description": "",
   "main": "index.js",
@@ -10,7 +10,7 @@
   "type": "module",
   "private": true,
   "bin": {
-    "xrpl": "src/xrpl-cli.js"
+    "xrplf": "src/xrplf-cli.js"
   },
   "engines": {
     "node": ">=18"
