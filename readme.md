@@ -100,3 +100,25 @@ You can set the default secret manager with:
 ```bash
 xrplf secrets provider <provider:local|gcp>
 ```
+
+If you use GCP Secret Manager, you will be prompted to authenticate with your Google account. You can also set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to point to a service account key file.
+
+## Unique Node List (UNL)
+
+You can also create a signed UNL using the `xrplf unl` command. This command will create a signed UNL file from keys that are stored in your secret manager.
+
+```bash
+ xrplf unl generate  --validators="../unl/data/unl-raw.yaml" --output="/tmp/unl.json"
+```
+
+This will create a signed UNL file in the specified output directory. The `--validators` flag is required and should point to the raw YAML file containing the list of validators. The `--output` flag is optional and defaults to `./unl.json`.
+
+Example (truncated) YAML file:
+
+```yaml
+nodes:
+  - id: nHBgyVGAEhgU6GoEqoriKmkNBjzhy6WJhX9Z7cZ71yJbv28dzvVN
+    name: v2.xrpl-commons.org
+  - id: nHU4bLE3EmSqNwfL4AP1UZeTNPrSPPP6FXLKXo2uqfHuvBQxDVKd
+    name: ripple.com
+```
