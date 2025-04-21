@@ -4,6 +4,22 @@ This CLI tool provides a common interface for interacting with XRPL-related repo
 
 ## Install
 
+### Clone the repository
+
+```bash
+git clone git@github.com:LoremLabs/xrpl-infra.git
+```
+
+### Install dependencies
+
+```bash
+pnpm install
+```
+
+### Make the CLI globally available
+
+To make the CLI globally available, you can use `pnpm link`:
+
 ```bash
 pnpm link --global
 ```
