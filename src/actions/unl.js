@@ -238,8 +238,11 @@ const exec = async (context) => {
           };
 
           // Load the validators list from file
-          const validators = nodeConfig.nodes;
-
+          // nodes = [{id,name}] => [id]
+          const validators = nodeConfig.nodes.map((node) => {
+            return node.id;
+          });
+          console.log('Validators:', validators);
           const sequence = 1;
           const expiration = 1756598400;
 
