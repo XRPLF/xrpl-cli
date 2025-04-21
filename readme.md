@@ -75,3 +75,28 @@ You can list all config options with:
 ```bash
 xrplf config list
 ```
+
+## Secrets
+
+You can interface with a secret manager using the `xrplf secrets` command. Currently supported secret managers are:
+
+- `local` - Local secret manager (OS keychain)
+- `gcp` - Google Cloud Secret Manager
+
+You can set a secret with:
+
+```bash
+xrplf secrets set --service="$optionalKeyPrefix" <key> <value>
+```
+
+You can read a secret with:
+
+```bash
+xrplf secrets get --service="$optionalKeyPrefix" <key>
+```
+
+You can set the default secret manager with:
+
+```bash
+xrplf secrets provider <provider:local|gcp>
+```

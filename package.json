@@ -21,11 +21,16 @@
   "dependencies": {
     "@google-cloud/secret-manager": "^6.0.1",
     "@iarna/toml": "^2.2.5",
+    "@noble/hashes": "^1.7.2",
+    "assert": "^2.1.0",
     "chalk": "^5.2.0",
     "cli-spinners": "^2.9.0",
     "conf": "^11.0.1",
+    "crypto": "^1.0.1",
     "dotenv": "^16.3.2",
+    "elliptic": "^6.6.1",
     "get-stdin": "^9.0.0",
+    "google-auth-library": "^9.15.1",
     "json-colorizer": "^2.2.2",
     "keytar": "^7.9.0",
     "meow": "^12.0.1",
@@ -33,8 +38,13 @@
     "ora": "^6.3.0",
     "path": "^0.12.7",
     "prompts": "^2.4.2",
+    "ripple-address-codec": "^5.0.0",
+    "ripple-binary-codec": "^2.3.0",
+    "ripple-keypairs": "^2.0.0",
     "toml": "^3.0.0",
-    "window-size": "^1.1.1"
+    "window-size": "^1.1.1",
+    "xrpl": "^4.2.0",
+    "yaml": "^2.7.1"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0",

@@ -10,7 +10,8 @@ export const exec = async (context) => {
   const [cmd, subcommand, key = '', ...rest] = context.input;
   const value = rest.join(' ');
 
-  const service = config.get('personality') || context.personality || 'default';
+  const service =
+    context.flags.service || config.get('personality') || context.personality || 'default';
 
   if (context.flags.debug) {
     console.log(
@@ -18,12 +19,12 @@ export const exec = async (context) => {
     );
   }
 
-  const provider = getSecretProvider();
+  const secrets = await getSecretProvider();
 
   switch (subcommand) {
     case 'provider': {
       if (!key) {
-        console.log(provider.type());
+        console.log(secrets.type());
         process.exit(1);
       }
       // set the provider
@@ -42,7 +43,7 @@ export const exec = async (context) => {
         }
       }
 
-      const newSecrets = getSecretProvider();
+      const newSecrets = await getSecretProvider();
 
       console.log(`${newSecrets.type()}`);
       break;
@@ -74,7 +75,7 @@ export const exec = async (context) => {
         process.exit(1);
       }
 
-      await provider.set(service, key, value);
+      await secrets.set(service, key, value);
       console.log(chalk.green(`✅ Secret ${key} set`));
       break;
     }
@@ -86,7 +87,7 @@ export const exec = async (context) => {
       }
       let result;
       try {
-        result = await provider.get(service, key);
+        result = await secrets.get(service, key);
       } catch (err) {
         console.error(chalk.red(`Error getting secret: ${err.message}`));
         process.exit(1);
@@ -102,13 +103,13 @@ export const exec = async (context) => {
         console.error(`Usage: ${context.personality} secret delete KEY`);
         process.exit(1);
       }
-      await provider.delete(service, key);
+      await secrets.delete(service, key);
       console.log(chalk.green(`✅ Deleted ${key} from secret storage`));
       break;
     }
 
     case 'list': {
-      const list = await provider.list(service);
+      const list = await secrets.list(service);
       console.log(list);
       break;
     }
@@ -123,7 +124,7 @@ export const exec = async (context) => {
       console.error(`  ${context.personality} secret provider [gcp|local]`);
 
       console.error('\nCurrent Provider:');
-      console.error(`  provider: ${provider.type()}`);
+      console.error(`  provider: ${secrets.type()}`);
       process.exit(1);
     }
   }
