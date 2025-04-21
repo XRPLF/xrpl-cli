@@ -7,7 +7,7 @@ This CLI tool provides a common interface for interacting with XRPL-related repo
 ### Clone the repository
 
 ```bash
-git clone git@github.com:LoremLabs/xrpl-infra.git
+git clone git@github.com:XRPLF/xrpl-infra.git
 ```
 
 ### Install dependencies
