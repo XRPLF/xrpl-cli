@@ -81,8 +81,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       xrpl:
-        specifier: ^4.2.0
-        version: 4.2.0
+        specifier: ^4.2.5
+        version: 4.2.5
       yaml:
         specifier: ^2.7.1
         version: 2.7.1
@@ -1587,8 +1587,8 @@ packages:
       utf-8-validate:
         optional: true
 
-  xrpl@4.2.0:
-    resolution: {integrity: sha512-RR6lJhRyQHPoI/rZGuKBzUc45KSC3thpYVzn3ATu78GXDZ6vsyn8SXmNveMhAJ2AVRvpRiyyztbU2TmGRUp2Xg==}
+  xrpl@4.2.5:
+    resolution: {integrity: sha512-QIpsqvhaRiVvlq7px7lC+lhrxESDMN1vd8mW0SfTgY5WgzP9RLiDoVywOOvSZqDDjPs0EGfhxzYjREW1gGu0Ng==}
     engines: {node: '>=18.0.0'}
 
   y18n@5.0.8:
@@ -3205,7 +3205,7 @@ snapshots:
 
   ws@8.18.1: {}
 
-  xrpl@4.2.0:
+  xrpl@4.2.5:
     dependencies:
       '@scure/bip32': 1.6.2
       '@scure/bip39': 1.5.4
