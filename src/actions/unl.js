@@ -18,6 +18,16 @@ const colorJson = (obj) => {
 };
 
 async function loadYamlFile(path) {
+  // see if path is a url or a file
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    const response = await fetch(path);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch YAML from ${path}: ${response.statusText}`);
+    }
+    const text = await response.text();
+    return yaml.parse(text);
+  }
+  // otherwise, assume it's a file path
   const file = await fsPromises.readFile(path, 'utf8');
   return yaml.parse(file);
 }
