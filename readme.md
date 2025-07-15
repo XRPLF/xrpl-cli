@@ -139,7 +139,7 @@ export const exec = async (context) => {
 export const description = "hello world example in javascript";
 ```
 
-## Goole Cloud Setup
+## Google Cloud Setup
 
 You may need to set:
 
