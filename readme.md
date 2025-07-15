@@ -138,3 +138,13 @@ export const exec = async (context) => {
 
 export const description = "hello world example in javascript";
 ```
+
+## Goole Cloud Setup
+
+You may need to set:
+
+```bash
+export GOOGLE_CLOUD_PROJECT=xrplf-infra-shared
+```
+
+before running the CLI commands that interact with GCP.
