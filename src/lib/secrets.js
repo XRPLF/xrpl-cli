@@ -47,6 +47,9 @@ class GCPSecretManagerProvider extends SecretProvider {
     super();
     this.client = null; // new SecretManagerServiceClient();
     this.projectId = process.env.GCP_PROJECT_ID || config.get('gcp_project_id');
+    if (!this.projectId) {
+      console.log(chalk.blue(`GCP Secret Manager project ID: ${this.projectId || 'not set'}`));
+    }
   }
 
   _secretPath(service, key) {
@@ -62,12 +65,14 @@ class GCPSecretManagerProvider extends SecretProvider {
 
     const getAuthStatus = async () => {
       try {
-        client = new SecretManagerServiceClient();
+        client = new SecretManagerServiceClient({
+          projectId: this.projectId,
+        });
         //   console.log('GCP Secret Manager client created', client);
 
         //   await client.getProjectId();
         const projectId = await client.getProjectId();
-        //   console.log('GCP Secret Manager project ID:', projectId);
+        // console.log('GCP Secret Manager project ID:', projectId);
         if (projectId) {
           try {
             const auth = new GoogleAuth({
@@ -80,17 +85,33 @@ class GCPSecretManagerProvider extends SecretProvider {
             //   console.log(res.data);
             //   console.log('GCP Secret Manager client authenticated with API key');
           } catch (e) {
+            console.error(chalk.red('❌ GCP Secret Manager client not authenticated with API key'));
+            console.error(e);
+
             return false;
           }
         } else {
-          // console.log('GCP Secret Manager client not authenticated with API key');
+          console.error(chalk.red('❌ GCP Secret Manager client not authenticated with API key'));
+          console.error(e);
           return false;
         }
 
         this.client = client;
         return true;
       } catch (err) {
-        //   console.error('Error creating GCP Secret Manager client:', err);
+        if (err.message.includes('Unable to detect a Project Id in the current environment')) {
+          console.error(
+            chalk.red(
+              '❌ GCP Secret Manager setup failed. Please set GCP_PROJECT_ID in your environment variables or config.'
+            )
+          );
+          console.error(err);
+          process.exit(1);
+        } else {
+          console.error(
+            chalk.yellow('⚠️ GCP Secret Manager client not authenticated with API key')
+          );
+        }
         return false;
       }
     };
