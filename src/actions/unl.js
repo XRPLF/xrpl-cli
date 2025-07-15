@@ -259,7 +259,35 @@ const exec = async (context) => {
           });
           console.log('Validators:', validators);
           const sequence = 1;
-          const expiration = 1756598400;
+          // const expiration = 1756598400;
+
+          // ask for the expiration date, default to 180 days from now
+          const result = await prompts({
+            type: 'text',
+            name: 'exp',
+            message: 'Expiration date ?',
+            initial: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+          });
+          if (!result.exp) {
+            log(chalk.red(`❌ No expiration date provided`));
+            process.exit(1);
+          }
+          const expiration = Math.floor(new Date(result.exp).getTime() / 1000); // convert to unix timestamp
+          log('Expiration:', new Date(expiration * 1000).toISOString());
+          log(chalk.blue(line));
+          // ask for confirmation
+          const confirmResult = await prompts({
+            type: 'confirm',
+            name: 'value',
+            message: `Are you sure you want to create a UNL with ${
+              validators.length
+            } validators? Expiration: ${new Date(expiration * 1000).toISOString()}`,
+            initial: true,
+          });
+          if (!confirmResult.value) {
+            log(chalk.red(`❌ UNL creation cancelled`));
+            process.exit(0);
+          }
 
           // Create the UNL
           const createUnlPromise = createVL(
@@ -456,7 +484,7 @@ const exec = async (context) => {
           destination: fileToUpload,
           gzip: true, // compress the file
           metadata: {
-            cacheControl: 'public, max-age=0', // minimal cache
+            cacheControl: 'public, max-age=30, stale-while-revalidate=86400, stale-if-error=604800',
             contentType: 'application/json', // set the content type
           },
         });
@@ -475,6 +503,35 @@ const exec = async (context) => {
         log(
           `You can access the file at: https://storage.googleapis.com/${bucketName}/${fileToUpload}`
         );
+
+        // ask if they want to set it as the default (index.html)
+        // const result = await prompts({
+        //   type: 'confirm',
+        //   name: 'value',
+        //   message: `Do you want to set ${fileToUpload} as the default file? [recommended for unl]
+        //   `,
+        //   initial: true,
+        // });
+        if (true) {
+          // always set the default file for unl
+          // set the default file by uploading index.html as the same file
+          const defaultFileUploadPromise = bucket.upload(fileToUpload, {
+            destination: 'index.html',
+            gzip: true, // compress the file
+            metadata: {
+              cacheControl:
+                'public, max-age=30, stale-while-revalidate=86400, stale-if-error=604800',
+              contentType: 'application/json',
+            },
+          });
+          await waitFor(defaultFileUploadPromise, {
+            text: `Setting ${fileToUpload} as the default file...`,
+          });
+          log(chalk.green(`✅ Default file set to ${fileToUpload}`));
+        }
+        // else {
+        //   log(chalk.blue(`Default file not set.`));
+        // }
 
         break;
       }
