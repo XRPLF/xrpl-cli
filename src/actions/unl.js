@@ -1,5 +1,6 @@
 import { createVL, generateKeyPair } from '../lib/unl.js';
 
+import { Storage } from '@google-cloud/storage';
 import { Client as XrplClient } from 'xrpl';
 import chalk from 'chalk';
 import colorize from 'json-colorizer';
@@ -10,6 +11,8 @@ import prompts from 'prompts';
 import { waitFor } from '../lib/wait.js';
 import windowSize from 'window-size';
 import yaml from 'yaml';
+
+const storage = new Storage();
 
 const log = console.log;
 
@@ -51,6 +54,7 @@ const exec = async (context) => {
         { title: 'Quit', value: 'quit', selected: true },
         { title: 'Initialize Keys', value: 'init', selected: false },
         { title: 'Generate UNL', value: 'generate', selected: false },
+        { title: 'Upload UNL', value: 'upload', selected: false },
         { title: 'Help', value: 'help', selected: false },
       ],
       // hint: "- Space to select. Return to submit",
@@ -71,6 +75,7 @@ const exec = async (context) => {
         log('');
         log('init: Initialize validator keys');
         log('generate: Generate a UNL from a list of validators');
+        log('upload: Upload the UNL to a bucket');
         log('help: Show this help message');
         log('quit: Quit the program');
         log('');
@@ -309,6 +314,167 @@ const exec = async (context) => {
         } catch (error) {
           console.error('Error:', error);
         }
+
+        break;
+      }
+      case 'upload': {
+        // we will upload the UNL to a bucket, creating it if it doesn't exist
+        const bucketName = context.flags.bucket || context.input[2] || 'xrplf-unl';
+        if (!bucketName) {
+          log(chalk.red(`❌ No bucket name provided`));
+          process.exit(1);
+        }
+
+        // get the file to upload
+        let fileToUpload = context.flags.file || context.input[3];
+        if (!fileToUpload) {
+          // ask the user for a file name
+          const result = await prompts({
+            type: 'text',
+            name: 'value',
+            message: 'File to upload ?',
+            initial: 'unl.json',
+          });
+          fileToUpload = result.value;
+        }
+
+        if (!fileToUpload) {
+          log(chalk.red(`❌ No file to upload`));
+          process.exit(1);
+        }
+
+        // check if the file exists
+        try {
+          await fsPromises.access(fileToUpload);
+        } catch (error) {
+          log(chalk.red(`❌ File not found: ${fileToUpload}`));
+          process.exit(1);
+        }
+
+        // see if the bucket exists
+        const bucket = storage.bucket(bucketName);
+
+        // delete current bucket if it exists
+        // const deleteBucketPromise = bucket.delete();
+        // try {
+        //   await waitFor(deleteBucketPromise, {
+        //     text: `Deleting bucket ${bucketName} if it exists...`,
+        //   });
+        //   log(chalk.green(`✅ Bucket ${bucketName} deleted.`));
+        // } catch (error) {
+        //   if (error.code !== 404) {
+        //     log(chalk.red(`❌ Error deleting bucket ${bucketName}: ${error.message}`));
+        //     process.exit(1);
+        //   } else {
+        //     log(chalk.yellow(`Bucket ${bucketName} does not exist, skipping deletion.`));
+        //   }
+        // }
+
+        const existsPromise = bucket.exists();
+        const [exists] = await waitFor(existsPromise, {
+          text: `Checking if bucket ${bucketName} exists...`,
+        });
+
+        if (!exists) {
+          // create the bucket in europe
+          const createBucketPromise = storage.createBucket(bucketName, {
+            location: 'EU',
+            storageClass: 'STANDARD',
+            predefinedAcl: 'publicRead',
+          });
+          await waitFor(createBucketPromise, {
+            text: `Creating bucket ${bucketName}...`,
+          });
+          log(chalk.green(`✅ Bucket ${bucketName} created.`));
+        } else {
+          log(chalk.green(`Bucket ${bucketName} already exists.`));
+
+          // const [metadata] = await bucket.getMetadata();
+          // const ublaEnabled = metadata.iamConfiguration?.uniformBucketLevelAccess?.enabled;
+
+          // if (ublaEnabled) {
+          //   await waitFor(
+          //     bucket.setMetadata({
+          //       iamConfiguration: {
+          //         uniformBucketLevelAccess: { enabled: false },
+          //       },
+          //     }),
+          //     {
+          //       text: `Disabling Uniform Bucket-Level Access for ${bucketName}...`,
+          //     }
+          //   );
+          //   log(chalk.green(`✅ UBLA disabled on bucket ${bucketName}`));
+          // }
+        }
+
+        // await waitFor(
+        //   storage.bucket(bucketName).acl.default.add({
+        //     entity: 'allUsers',
+        //     role: storage.acl.READER_ROLE,
+        //   }),
+        //   {
+        //     text: `Setting bucket ${bucketName} to public...`,
+        //   }
+        // );
+        // log(chalk.blue(`Bucket ${bucketName} is now public.`));
+
+        const [policy] = await bucket.iam.getPolicy();
+
+        policy.bindings.push({
+          role: 'roles/storage.objectViewer',
+          members: ['allUsers'],
+        });
+
+        await waitFor(bucket.iam.setPolicy(policy), {
+          text: `Granting public read access via IAM to bucket ${bucketName}...`,
+        });
+
+        log(chalk.green(`✅ Public read access granted via IAM`));
+
+        // check if the file exists in the bucket
+        const [files] = await bucket.getFiles({ prefix: fileToUpload });
+        if (files.length > 0) {
+          log(chalk.yellow(`⚠️  File ${fileToUpload} already exists in bucket ${bucketName}.`));
+          const result = await prompts({
+            type: 'confirm',
+            name: 'value',
+            message: `Do you want to overwrite it?`,
+            initial: false,
+          });
+          if (!result.value) {
+            log(chalk.red(`❌ File not uploaded. Exiting.`));
+            process.exit(0);
+          }
+          log(chalk.blue(`Overwriting file ${fileToUpload} in bucket ${bucketName}.`));
+        } else {
+          log(chalk.blue(`File ${fileToUpload} does not exist in bucket ${bucketName}.`));
+        }
+
+        // upload the file to the bucket
+        // const fileStream = fsPromises.createReadStream(fileToUpload);
+        const uploadPromise = bucket.upload(fileToUpload, {
+          destination: fileToUpload,
+          gzip: true, // compress the file
+          metadata: {
+            cacheControl: 'public, max-age=0', // minimal cache
+            contentType: 'application/json', // set the content type
+          },
+        });
+
+        await waitFor(uploadPromise, {
+          text: `Uploading ${fileToUpload} to bucket ${bucketName}...`,
+        });
+
+        // make the file public
+        // await waitFor(bucket.file(fileToUpload).makePublic(), {
+        //   text: `Making file ${fileToUpload} public...`,
+        // });
+        // log(`📢 File is now publicly accessible.`);
+
+        log(chalk.green(`✅ File uploaded to bucket ${bucketName}`));
+        log(
+          `You can access the file at: https://storage.googleapis.com/${bucketName}/${fileToUpload}`
+        );
 
         break;
       }

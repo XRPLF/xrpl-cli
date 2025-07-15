@@ -20,6 +20,7 @@
   "license": "MIT",
   "dependencies": {
     "@google-cloud/secret-manager": "^6.0.1",
+    "@google-cloud/storage": "^7.16.0",
     "@iarna/toml": "^2.2.5",
     "@noble/hashes": "^1.7.2",
     "assert": "^2.1.0",
