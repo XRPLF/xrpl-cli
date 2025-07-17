@@ -84,27 +84,10 @@ class GCPSecretManagerProvider extends SecretProvider {
         const client = new SecretManagerServiceClient();
 
         if (isGithubActions) {
-          // In GitHub Actions, we use the Workload Identity Federation
-          // Ensure the GCP_WORKLOAD_IDENTITY_PROVIDER and GCP_SERVICE_ACCOUNT_EMAIL are set
-          const provider = process.env.GCP_WORKLOAD_IDENTITY_PROVIDER;
-          const serviceAccountEmail = process.env.GCP_SERVICE_ACCOUNT_EMAIL;
-          if (!provider || !serviceAccountEmail) {
-            console.error(
-              chalk.red(
-                '❌ GCP Workload Identity Provider or Service Account Email is not set in GitHub Actions environment variables.'
-              )
-            );
-            return false;
-          }
-          client = new SecretManagerServiceClient({
-            credentials: {
-              type: 'external_account',
-              audience: `//iam.googleapis.com/projects/${process.env.GOOGLE_CLOUD_PROJECT}/locations/global/workloadIdentityPools/${provider}/subject`,
-              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
-              token_url: 'https://sts.googleapis.com/v1/token',
-              service_account_email: serviceAccountEmail,
-            },
-          });
+          // Assume auth was already set up via exported credentials
+          console.log(chalk.gray('⏩ GitHub Actions: auth setup'));
+          this.client = client;
+          return true;
         } else {
           const [projectId] = await client.getProjectId();
 
