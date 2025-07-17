@@ -81,7 +81,12 @@ class GCPSecretManagerProvider extends SecretProvider {
 
     const getAuthStatus = async () => {
       try {
-        client = new SecretManagerServiceClient();
+        const auth = new GoogleAuth({
+          scopes: 'https://www.googleapis.com/auth/cloud-platform',
+        });
+
+        client = new SecretManagerServiceClient({ auth });
+
         const [projectId] = await client.getProjectId();
 
         if (!projectId) {
@@ -94,10 +99,6 @@ class GCPSecretManagerProvider extends SecretProvider {
           this.client = client;
           return true;
         } else {
-          const auth = new GoogleAuth({
-            scopes: 'https://www.googleapis.com/auth/cloud-platform',
-          });
-
           const tokenClient = await auth.getClient();
           const tokenRes = await tokenClient.getAccessToken();
 
