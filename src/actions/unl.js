@@ -82,7 +82,7 @@ const exec = async (context) => {
         log('Examples:');
         log('  unl init');
         log('  unl generate --validators="validators.yaml"');
-        log('  unl generate validators.yaml --output="../unl.json" --nocompress');
+        log('  unl generate validators.yaml --output="../unl.json" --compress');
         log('');
 
         break;
@@ -107,7 +107,7 @@ const exec = async (context) => {
         if (validatorKeys) {
           // log the keys
           log('✅ Validator keys found');
-          log(colorJson(validatorKeys));
+          // log(colorJson(validatorKeys)); // do not print, sensitive information
         } else {
           // generate a new keypair
           // wait a random amount of time
@@ -186,10 +186,6 @@ const exec = async (context) => {
           }
         }
 
-        // const resp = {
-        //   date: new Date().toISOString(),
-        // };
-        // console.log(`this`, colorJson(resp));
         break;
       }
       case 'generate': {
@@ -211,8 +207,8 @@ const exec = async (context) => {
         }
         if (validatorKeys) {
           // log the keys
-          log('✅ Validator keys found');
-          log(colorJson(validatorKeys));
+          log('✅ Validator keys found in secret store');
+          // log(colorJson(validatorKeys));
         } else {
           log(chalk.red(`❌ No validator keys found`));
           process.exit(1);
@@ -262,31 +258,44 @@ const exec = async (context) => {
           // const expiration = 1756598400;
 
           // ask for the expiration date, default to 180 days from now
-          const result = await prompts({
-            type: 'text',
-            name: 'exp',
-            message: 'Expiration date ?',
-            initial: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
-          });
-          if (!result.exp) {
-            log(chalk.red(`❌ No expiration date provided`));
+          let expiration = context.flags.expiration;
+
+          if (!expiration) {
+            const result = await prompts({
+              type: 'text',
+              name: 'exp',
+              message: 'Expiration date ?',
+              initial: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+            });
+            if (!result.exp) {
+              log(chalk.red(`❌ No expiration date provided`));
+              process.exit(1);
+            }
+            expiration = Math.floor(new Date(result.exp).getTime() / 1000); // convert to unix timestamp
+          } else {
+            expiration = Math.floor(new Date(expiration).getTime() / 1000); // convert to unix timestamp
+          }
+          if (isNaN(expiration) || expiration <= 0) {
+            log(chalk.red(`❌ Invalid expiration date`));
             process.exit(1);
           }
-          const expiration = Math.floor(new Date(result.exp).getTime() / 1000); // convert to unix timestamp
           log('Expiration:', new Date(expiration * 1000).toISOString());
           log(chalk.blue(line));
-          // ask for confirmation
-          const confirmResult = await prompts({
-            type: 'confirm',
-            name: 'value',
-            message: `Are you sure you want to create a UNL with ${
-              validators.length
-            } validators? Expiration: ${new Date(expiration * 1000).toISOString()}`,
-            initial: true,
-          });
-          if (!confirmResult.value) {
-            log(chalk.red(`❌ UNL creation cancelled`));
-            process.exit(0);
+
+          if (!context.flags.quiet) {
+            // ask for confirmation
+            const confirmResult = await prompts({
+              type: 'confirm',
+              name: 'value',
+              message: `Are you sure you want to create a UNL with ${
+                validators.length
+              } validators? Expiration: ${new Date(expiration * 1000).toISOString()}`,
+              initial: true,
+            });
+            if (!confirmResult.value) {
+              log(chalk.red(`❌ UNL creation cancelled`));
+              process.exit(0);
+            }
           }
 
           // Create the UNL
@@ -309,7 +318,7 @@ const exec = async (context) => {
           console.log('UNL:', colorJson(vl));
 
           // if we have flags.output, save the output to a file
-          let outputFile = context.flags.output || context.input[3];
+          let outputFile = context.flags.output;
 
           if (!outputFile) {
             // ask the user for a file name
@@ -329,8 +338,8 @@ const exec = async (context) => {
             log(chalk.green(`✅ UNL saved to ${outputFile}`));
           }
 
-          // if we dont have flags.nocompress, compress the output file
-          if (!context.flags.nocompress) {
+          // if we have flags.compress, compress the output file
+          if (context.flags.compress) {
             const compressPromise = gzipFile(outputFile, `${outputFile}.gz`);
             await waitFor(compressPromise, {
               text: `Compressing the UNL file in the same directory...`,
@@ -382,22 +391,6 @@ const exec = async (context) => {
         // see if the bucket exists
         const bucket = storage.bucket(bucketName);
 
-        // delete current bucket if it exists
-        // const deleteBucketPromise = bucket.delete();
-        // try {
-        //   await waitFor(deleteBucketPromise, {
-        //     text: `Deleting bucket ${bucketName} if it exists...`,
-        //   });
-        //   log(chalk.green(`✅ Bucket ${bucketName} deleted.`));
-        // } catch (error) {
-        //   if (error.code !== 404) {
-        //     log(chalk.red(`❌ Error deleting bucket ${bucketName}: ${error.message}`));
-        //     process.exit(1);
-        //   } else {
-        //     log(chalk.yellow(`Bucket ${bucketName} does not exist, skipping deletion.`));
-        //   }
-        // }
-
         const existsPromise = bucket.exists();
         const [exists] = await waitFor(existsPromise, {
           text: `Checking if bucket ${bucketName} exists...`,
@@ -416,35 +409,7 @@ const exec = async (context) => {
           log(chalk.green(`✅ Bucket ${bucketName} created.`));
         } else {
           log(chalk.green(`Bucket ${bucketName} already exists.`));
-
-          // const [metadata] = await bucket.getMetadata();
-          // const ublaEnabled = metadata.iamConfiguration?.uniformBucketLevelAccess?.enabled;
-
-          // if (ublaEnabled) {
-          //   await waitFor(
-          //     bucket.setMetadata({
-          //       iamConfiguration: {
-          //         uniformBucketLevelAccess: { enabled: false },
-          //       },
-          //     }),
-          //     {
-          //       text: `Disabling Uniform Bucket-Level Access for ${bucketName}...`,
-          //     }
-          //   );
-          //   log(chalk.green(`✅ UBLA disabled on bucket ${bucketName}`));
-          // }
         }
-
-        // await waitFor(
-        //   storage.bucket(bucketName).acl.default.add({
-        //     entity: 'allUsers',
-        //     role: storage.acl.READER_ROLE,
-        //   }),
-        //   {
-        //     text: `Setting bucket ${bucketName} to public...`,
-        //   }
-        // );
-        // log(chalk.blue(`Bucket ${bucketName} is now public.`));
 
         const [policy] = await bucket.iam.getPolicy();
 
@@ -463,23 +428,23 @@ const exec = async (context) => {
         const [files] = await bucket.getFiles({ prefix: fileToUpload });
         if (files.length > 0) {
           log(chalk.yellow(`⚠️  File ${fileToUpload} already exists in bucket ${bucketName}.`));
-          const result = await prompts({
-            type: 'confirm',
-            name: 'value',
-            message: `Do you want to overwrite it?`,
-            initial: false,
-          });
-          if (!result.value) {
-            log(chalk.red(`❌ File not uploaded. Exiting.`));
-            process.exit(0);
+          if (!context.flags.quiet) {
+            const result = await prompts({
+              type: 'confirm',
+              name: 'value',
+              message: `Do you want to overwrite it?`,
+              initial: false,
+            });
+            if (!result.value) {
+              log(chalk.red(`❌ File not uploaded. Exiting.`));
+              process.exit(0);
+            }
           }
           log(chalk.blue(`Overwriting file ${fileToUpload} in bucket ${bucketName}.`));
         } else {
           log(chalk.blue(`File ${fileToUpload} does not exist in bucket ${bucketName}.`));
         }
 
-        // upload the file to the bucket
-        // const fileStream = fsPromises.createReadStream(fileToUpload);
         const uploadPromise = bucket.upload(fileToUpload, {
           destination: fileToUpload,
           gzip: true, // compress the file
@@ -493,42 +458,28 @@ const exec = async (context) => {
           text: `Uploading ${fileToUpload} to bucket ${bucketName}...`,
         });
 
-        // make the file public
-        // await waitFor(bucket.file(fileToUpload).makePublic(), {
-        //   text: `Making file ${fileToUpload} public...`,
-        // });
-        // log(`📢 File is now publicly accessible.`);
-
         log(chalk.green(`✅ File uploaded to bucket ${bucketName}`));
         log(
           `You can access the file at: https://storage.googleapis.com/${bucketName}/${fileToUpload}`
         );
 
-        // ask if they want to set it as the default (index.html)
-        // const result = await prompts({
-        //   type: 'confirm',
-        //   name: 'value',
-        //   message: `Do you want to set ${fileToUpload} as the default file? [recommended for unl]
-        //   `,
-        //   initial: true,
-        // });
-        if (true) {
-          // always set the default file for unl
-          // set the default file by uploading index.html as the same file
-          const defaultFileUploadPromise = bucket.upload(fileToUpload, {
-            destination: 'index.html',
-            gzip: true, // compress the file
-            metadata: {
-              cacheControl:
-                'public, max-age=30, stale-while-revalidate=86400, stale-if-error=604800',
-              contentType: 'application/json',
-            },
-          });
-          await waitFor(defaultFileUploadPromise, {
-            text: `Setting ${fileToUpload} as the default file...`,
-          });
-          log(chalk.green(`✅ Default file set to ${fileToUpload}`));
-        }
+        // if (false) {
+        //   // always set the default file for unl
+        //   // set the default file by uploading index.html as the same file
+        //   const defaultFileUploadPromise = bucket.upload(fileToUpload, {
+        //     destination: 'index.html',
+        //     gzip: true, // compress the file
+        //     metadata: {
+        //       cacheControl:
+        //         'public, max-age=30, stale-while-revalidate=86400, stale-if-error=604800',
+        //       contentType: 'application/json',
+        //     },
+        //   });
+        //   await waitFor(defaultFileUploadPromise, {
+        //     text: `Setting ${fileToUpload} as the default file...`,
+        //   });
+        //   log(chalk.green(`✅ Default file set to ${fileToUpload}`));
+        // }
         // else {
         //   log(chalk.blue(`Default file not set.`));
         // }
