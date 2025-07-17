@@ -81,20 +81,19 @@ class GCPSecretManagerProvider extends SecretProvider {
 
     const getAuthStatus = async () => {
       try {
-        const client = new SecretManagerServiceClient();
+        client = new SecretManagerServiceClient();
+        const [projectId] = await client.getProjectId();
+
+        if (!projectId) {
+          console.error(chalk.red('❌ GCP project ID could not be detected'));
+          return false;
+        }
 
         if (isGithubActions) {
           // Assume auth was already set up via exported credentials
           this.client = client;
           return true;
         } else {
-          const [projectId] = await client.getProjectId();
-
-          if (!projectId) {
-            console.error(chalk.red('❌ GCP project ID could not be detected'));
-            return false;
-          }
-
           const auth = new GoogleAuth({
             scopes: 'https://www.googleapis.com/auth/cloud-platform',
           });
