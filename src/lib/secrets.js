@@ -79,53 +79,32 @@ class GCPSecretManagerProvider extends SecretProvider {
 
     const getAuthStatus = async () => {
       try {
-        client = new SecretManagerServiceClient({
-          projectId: this.projectId,
-        });
-        //   console.log('GCP Secret Manager client created', client);
+        const client = new SecretManagerServiceClient();
+        const [projectId] = await client.getProjectId();
 
-        //   await client.getProjectId();
-        const projectId = await client.getProjectId();
-        // console.log('GCP Secret Manager project ID:', projectId);
-        if (projectId) {
-          try {
-            const auth = new GoogleAuth({
-              scopes: 'https://www.googleapis.com/auth/cloud-platform',
-            });
-            const client = await auth.getClient();
-            const projectId = await auth.getProjectId();
-            const url = `https://dns.googleapis.com/dns/v1/projects/${projectId}`;
-            const res = await client.request({ url });
-            //   console.log(res.data);
-            //   console.log('GCP Secret Manager client authenticated with API key');
-          } catch (e) {
-            console.error(chalk.red('❌ GCP Secret Manager client not authenticated with API key'));
-            console.error(e);
-
-            return false;
-          }
-        } else {
-          console.error(chalk.red('❌ GCP Secret Manager client not authenticated with API key'));
-          console.error(e);
+        if (!projectId) {
+          console.error(chalk.red('❌ GCP project ID could not be detected'));
           return false;
         }
 
+        const auth = new GoogleAuth({
+          scopes: 'https://www.googleapis.com/auth/cloud-platform',
+        });
+
+        const tokenClient = await auth.getClient();
+        const tokenRes = await tokenClient.getAccessToken();
+
+        if (!tokenRes || !tokenRes.token) {
+          console.error(chalk.red('❌ Failed to get GCP access token'));
+          return false;
+        }
+
+        console.log(chalk.green('✅ GCP authentication successful'));
         this.client = client;
         return true;
       } catch (err) {
-        if (err.message.includes('Unable to detect a Project Id in the current environment')) {
-          console.error(
-            chalk.red(
-              '❌ GCP Secret Manager setup failed. Please set GCP_PROJECT_ID in your environment variables or config.'
-            )
-          );
-          console.error(err);
-          process.exit(1);
-        } else {
-          console.error(
-            chalk.yellow('⚠️ GCP Secret Manager client not authenticated with API key')
-          );
-        }
+        console.error(chalk.red('❌ GCP authentication failed'));
+        console.error(err);
         return false;
       }
     };
