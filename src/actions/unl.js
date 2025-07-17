@@ -203,7 +203,7 @@ const exec = async (context) => {
           }
         } catch (err) {
           // no keys found
-          log(chalk.red(`❌ No validator keys found ${err.message}`));
+          log(chalk.red(`❌ Error parsing validator keys`));
         }
         if (validatorKeys) {
           // log the keys
