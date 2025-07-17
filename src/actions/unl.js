@@ -9,7 +9,6 @@ import { getSecretProvider } from '../lib/secrets.js';
 import { gzipFile } from '../lib/compress.js';
 import prompts from 'prompts';
 import { waitFor } from '../lib/wait.js';
-import windowSize from 'window-size';
 import yaml from 'yaml';
 
 const storage = new Storage();
@@ -42,8 +41,9 @@ const exec = async (context) => {
 
   const secrets = await getSecretProvider();
 
-  const { width } = windowSize.get();
-  const line = '-'.repeat(width - 10);
+  const width = process.stdout?.columns || 80;
+  const line = '-'.repeat(Math.max(10, width - 10));
+  log(chalk.blue(line));
 
   if (!subcommand) {
     const result = await prompts({

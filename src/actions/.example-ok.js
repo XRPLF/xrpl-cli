@@ -5,7 +5,6 @@ import prompts from 'prompts';
 import sysOpen from 'open';
 import toml from 'toml';
 import { waitFor } from '../lib/wait.js';
-import windowSize from 'window-size';
 
 const log = console.log;
 
@@ -50,9 +49,9 @@ const exec = async (context) => {
             resolve('done');
           }, 3000);
         });
-        const { width, height } = windowSize.get();
+        const width = process.stdout?.columns || 80;
         // draw a line
-        const line = '-'.repeat(width - 10);
+        const line = '-'.repeat(Math.max(10, width - 10));
         log(chalk.blue(line));
         const authStart = await waitFor(waitPromise, {
           text: `Waiting...`,
