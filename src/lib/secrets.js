@@ -176,12 +176,13 @@ class GCPSecretManagerProvider extends SecretProvider {
       });
     } catch (e) {
       console.error(chalk.red(`❌ Failed to access secret: ${service}/${key}`));
-      console.error(e.code);
+      console.error(e);
       if (e.code === 2) {
         if (e.message.includes('status code 400')) {
           throw new Error('GCP Auth failed. Please check your credentials and permissions.');
         }
       } else if (e.code === 5) {
+        console.error(chalk.red(`❌ Secret ${service}/${key} not found or empty`));
         return null; // secret not found
       } else {
         throw e;
@@ -189,7 +190,7 @@ class GCPSecretManagerProvider extends SecretProvider {
     }
     const [version] = result;
     if (!version || !version.payload || !version.payload.data) {
-      console.error(chalk.red(`❌ Secret ${service}/${key} not found or empty`));
+      console.error(chalk.red(`❌❌ Secret ${service}/${key} not found or empty`));
       return null;
     }
     console.log(chalk.green(`✅ Secret ${service}/${key} fetched successfully`));
