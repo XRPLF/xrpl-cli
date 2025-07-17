@@ -85,7 +85,6 @@ class GCPSecretManagerProvider extends SecretProvider {
 
         if (isGithubActions) {
           // Assume auth was already set up via exported credentials
-          console.log(chalk.gray('⏩ GitHub Actions: auth setup'));
           this.client = client;
           return true;
         } else {
@@ -171,10 +170,13 @@ class GCPSecretManagerProvider extends SecretProvider {
 
     let result;
     try {
+      console.log(chalk.white(`🔍 Fetching secret: ${service}/${key}`));
       result = await this.client.accessSecretVersion({
         name: `${this._secretPath(service, key)}/versions/latest`,
       });
     } catch (e) {
+      console.error(chalk.red(`❌ Failed to access secret: ${service}/${key}`));
+      console.error(e.code);
       if (e.code === 2) {
         if (e.message.includes('status code 400')) {
           throw new Error('GCP Auth failed. Please check your credentials and permissions.');
@@ -186,6 +188,11 @@ class GCPSecretManagerProvider extends SecretProvider {
       }
     }
     const [version] = result;
+    if (!version || !version.payload || !version.payload.data) {
+      console.error(chalk.red(`❌ Secret ${service}/${key} not found or empty`));
+      return null;
+    }
+    console.log(chalk.green(`✅ Secret ${service}/${key} fetched successfully`));
     return version.payload?.data?.toString('utf8') ?? null;
   }
 
