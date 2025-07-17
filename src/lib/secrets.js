@@ -77,26 +77,53 @@ class GCPSecretManagerProvider extends SecretProvider {
   async setup() {
     let client;
 
+    const isGithubActions = process.env.GITHUB_ACTIONS === 'true';
+
     const getAuthStatus = async () => {
       try {
         const client = new SecretManagerServiceClient();
-        const [projectId] = await client.getProjectId();
 
-        if (!projectId) {
-          console.error(chalk.red('❌ GCP project ID could not be detected'));
-          return false;
-        }
+        if (isGithubActions) {
+          // In GitHub Actions, we use the Workload Identity Federation
+          // Ensure the GCP_WORKLOAD_IDENTITY_PROVIDER and GCP_SERVICE_ACCOUNT_EMAIL are set
+          const provider = process.env.GCP_WORKLOAD_IDENTITY_PROVIDER;
+          const serviceAccountEmail = process.env.GCP_SERVICE_ACCOUNT_EMAIL;
+          if (!provider || !serviceAccountEmail) {
+            console.error(
+              chalk.red(
+                '❌ GCP Workload Identity Provider or Service Account Email is not set in GitHub Actions environment variables.'
+              )
+            );
+            return false;
+          }
+          client = new SecretManagerServiceClient({
+            credentials: {
+              type: 'external_account',
+              audience: `//iam.googleapis.com/projects/${process.env.GOOGLE_CLOUD_PROJECT}/locations/global/workloadIdentityPools/${provider}/subject`,
+              subject_token_type: 'urn:ietf:params:oauth:token-type:jwt',
+              token_url: 'https://sts.googleapis.com/v1/token',
+              service_account_email: serviceAccountEmail,
+            },
+          });
+        } else {
+          const [projectId] = await client.getProjectId();
 
-        const auth = new GoogleAuth({
-          scopes: 'https://www.googleapis.com/auth/cloud-platform',
-        });
+          if (!projectId) {
+            console.error(chalk.red('❌ GCP project ID could not be detected'));
+            return false;
+          }
 
-        const tokenClient = await auth.getClient();
-        const tokenRes = await tokenClient.getAccessToken();
+          const auth = new GoogleAuth({
+            scopes: 'https://www.googleapis.com/auth/cloud-platform',
+          });
 
-        if (!tokenRes || !tokenRes.token) {
-          console.error(chalk.red('❌ Failed to get GCP access token'));
-          return false;
+          const tokenClient = await auth.getClient();
+          const tokenRes = await tokenClient.getAccessToken();
+
+          if (!tokenRes || !tokenRes.token) {
+            console.error(chalk.red('❌ Failed to get GCP access token'));
+            return false;
+          }
         }
 
         console.log(chalk.green('✅ GCP authentication successful'));
