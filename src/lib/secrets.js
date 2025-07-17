@@ -2,7 +2,7 @@ import { GoogleAuth } from 'google-auth-library';
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 import chalk from 'chalk';
 import config from './config.js';
-import keytar from 'keytar';
+// import keytar from 'keytar';
 import prompts from 'prompts';
 import { spawnSync } from 'child_process';
 
@@ -16,15 +16,29 @@ class SecretProvider {
 }
 
 class KeytarProvider extends SecretProvider {
+  async loadKeytar() {
+    try {
+      const keytar = await import('keytar');
+      return keytar.default ?? keytar; // handle ESModule vs CommonJS
+    } catch (e) {
+      throw new Error(
+        'Keytar could not be loaded. Make sure it is installed and supports your platform.'
+      );
+    }
+  }
+
   async get(service, key) {
+    const keytar = await this.loadKeytar();
     return keytar.getPassword(service, key);
   }
 
   async set(service, key, value) {
+    const keytar = await this.loadKeytar();
     return keytar.setPassword(service, key, value);
   }
 
   async delete(service, key) {
+    const keytar = await this.loadKeytar();
     return keytar.deletePassword(service, key);
   }
 
