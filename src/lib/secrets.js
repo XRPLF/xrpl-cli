@@ -81,11 +81,7 @@ class GCPSecretManagerProvider extends SecretProvider {
 
     const getAuthStatus = async () => {
       try {
-        const auth = new GoogleAuth({
-          scopes: 'https://www.googleapis.com/auth/cloud-platform',
-        });
-
-        client = new SecretManagerServiceClient({ auth });
+        client = new SecretManagerServiceClient();
 
         const [projectId] = await client.getProjectId();
 
@@ -99,6 +95,10 @@ class GCPSecretManagerProvider extends SecretProvider {
           this.client = client;
           return true;
         } else {
+          const auth = new GoogleAuth({
+            scopes: 'https://www.googleapis.com/auth/cloud-platform',
+          });
+
           const tokenClient = await auth.getClient();
           const tokenRes = await tokenClient.getAccessToken();
 
@@ -175,7 +175,9 @@ class GCPSecretManagerProvider extends SecretProvider {
         name: `${this._secretPath(service, key)}/versions/latest`,
       });
     } catch (e) {
-      console.error(chalk.red(`❌ Failed to access secret: ${service}/${key}`));
+      console.error(
+        chalk.red(`❌ Failed to access secret: ${this._secretPath(service, key)}/versions/latest`)
+      );
       console.error(e);
       if (e.code === 2) {
         if (e.message.includes('status code 400')) {
@@ -185,6 +187,7 @@ class GCPSecretManagerProvider extends SecretProvider {
         console.error(chalk.red(`❌ Secret ${service}/${key} not found or empty`));
         return null; // secret not found
       } else {
+        console.error(chalk.red(`❌ An unexpected error occurred while fetching the secret`));
         throw e;
       }
     }
