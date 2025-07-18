@@ -315,7 +315,7 @@ const exec = async (context) => {
           }
 
           // Create the UNL
-          const createUnlPromise = createVL(
+          const doCreateUnlPromise = createVL(
             vk, // masterKey
             sk, //  ephemeralKey
             sequence,
@@ -324,9 +324,23 @@ const exec = async (context) => {
             client
           );
 
+          const createUnlPromise = new Promise((resolve, reject) => {
+            // 1) Start the actual creation
+            doCreateUnlPromise.then(resolve, reject);
+
+            // 2) Set up a 60 s timeout
+            const timer = setTimeout(() => {
+              reject(new Error('⏱️ UNL creation timed out after 60 seconds'));
+            }, 60_000);
+
+            // 3) If the real promise settles first, clear the timer
+            doCreateUnlPromise.finally(() => clearTimeout(timer));
+          });
+
           const vl = await waitFor(createUnlPromise, {
             text: `Creating the UNL...`,
           });
+
           if (!vl) {
             log(chalk.red(`❌ Error creating the UNL`));
             process.exit(1);
