@@ -92,6 +92,22 @@ const exec = async (context) => {
         let validatorKeys;
         try {
           // xrplf secrets get --service=unl validator_keys
+
+          // see if we should check the environment variable first
+          if (context.flags.use_env) {
+            const envKeys = process.env.UNL_VALIDATOR_KEYS;
+            if (envKeys) {
+              log('✅ Validator keys found in environment variable');
+              // parse the toml file
+              validatorKeys = JSON.parse(envKeys);
+              // log(colorJson(validatorKeys)); // do not print, sensitive information
+              break;
+            } else {
+              log(chalk.red(`❌ No validator keys found in environment variable`));
+              process.exit(1);
+            }
+          }
+
           const getUnlValidatorKeysPromise = secrets.get('unl', 'validator_keys'); // json
           const rawValidatorKeys = await waitFor(getUnlValidatorKeysPromise, {
             text: `Looking for validator keys...`,
