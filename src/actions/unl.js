@@ -270,7 +270,25 @@ const exec = async (context) => {
             return node.id;
           });
           console.log('Validators:', validators);
-          const sequence = 1;
+          let sequence = Number(context.flags.sequence);
+          if (!sequence || sequence <= 0) {
+            const now = new Date();
+
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0'); // 01–12
+            const day = String(now.getDate()).padStart(2, '0'); // 01–31
+
+            // total minutes since start of the day
+            const minutesSinceMidnight = now.getHours() * 60 + now.getMinutes();
+
+            // bucket: 0–95 ... 1440 minutes / 96 = 15 minutes per bucket
+            let bucket = Math.floor(minutesSinceMidnight / 15);
+            bucket = String(bucket).padStart(2, '0');
+
+            // sequence = YYYYMMDDBB
+            sequence = Number(`${year}${month}${day}${bucket}`);
+          }
+
           // const expiration = 1756598400;
 
           // ask for the expiration date, default to 180 days from now
